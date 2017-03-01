@@ -1,0 +1,9 @@
+Intermediate/
+Build/
+Binaries/
+DerivedDataCache/
+Saved/
+
+*.VC.db
+hello_unreal.VC.VC.opendb
+Content/
