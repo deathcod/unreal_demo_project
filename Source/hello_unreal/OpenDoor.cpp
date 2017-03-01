@@ -28,16 +28,32 @@ void UOpenDoor::BeginPlay()
 
 void UOpenDoor::DoorOpen()
 {
-	Owner->SetActorRotation(FRotator(0.0f, 90, 0));
+	//Owner->SetActorRotation(FRotator(0.0f, 90, 0));
 	UE_LOG(LogTemp, Warning, TEXT("I Actor is %s"), *Owner->GetName());
+
+	OnOpenRequest.Broadcast();
 }
 
 void UOpenDoor::DoorClose()
 {
 	GetOwner()->SetActorRotation(FRotator(0.0f, 0, 0));
-	UE_LOG(LogTemp, Warning, TEXT("I Actor is %s"), *Owner->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("I Actor is %s close"), *Owner->GetName());
 }
 
+float UOpenDoor::GetTotalMassOfActorOnPlate()
+{
+	float TotalMass = 0.f;
+	TArray<AActor*> OverlappingActors;
+	PressurePlate->GetOverlappingActors(OverlappingActors);
+
+	for ( auto &i: OverlappingActors)
+	{
+		TotalMass += i->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+		UE_LOG(LogTemp, Warning, TEXT("Door open for %s"), *i->GetName());
+	}
+
+	return TotalMass;
+}
 
 // Called every frame
 void UOpenDoor::TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction )
@@ -45,7 +61,7 @@ void UOpenDoor::TickComponent( float DeltaTime, ELevelTick TickType, FActorCompo
 	Super::TickComponent( DeltaTime, TickType, ThisTickFunction );
 	//Poll the Trigger Volune
 	
-	if (PressurePlate->IsOverlappingActor(ActorThatOpens))
+	if (GetTotalMassOfActorOnPlate() >= 150.f)
 	{
 		//if thr Actor is in the volume open it
 		DoorOpen();

@@ -33,16 +33,48 @@ void UGrabber::BeginPlay()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s missing physics handle component"),*GetOwner()->GetName());
 	}
+
+	InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
+
+	if (InputComponent)
+	{
+		//Input Component is found
+		InputComponent->BindAction("Grab", IE_Pressed, this, &UGrabber :: Grab);
+		InputComponent->BindAction("Release", IE_Released , this, &UGrabber::Release);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s missing input component"), *GetOwner()->GetName());
+	}
 }
 
+void UGrabber::Grab() {
+	UE_LOG(LogTemp, Warning, TEXT("text grabbed pressed"));
 
+	auto HitResult = GetFirstPhysicsBodyInReach();
+	auto ComponentToGrab = HitResult.GetComponent();
+	auto ActorHit = HitResult.GetActor();
+	
+	if (ActorHit)
+	{
+		PhysicsHandle->GrabComponent(
+			ComponentToGrab,
+			NAME_None,
+			ComponentToGrab->GetOwner()->GetActorLocation(),
+			true
+		);
+	}
+	
+}
+
+void UGrabber::Release() {
+	UE_LOG(LogTemp, Warning, TEXT("text released pressed"));
+	PhysicsHandle->ReleaseComponent();
+}
 // Called every frame
 void UGrabber::TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction )
 {
 	Super::TickComponent( DeltaTime, TickType, ThisTickFunction );
-
-	// ...
-
 	FVector PlayerViewPointLocation;
 	FRotator PlayerViewPointRotation;
 	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(
@@ -54,7 +86,27 @@ void UGrabber::TickComponent( float DeltaTime, ELevelTick TickType, FActorCompon
 
 	//Draw a red trace in the world.
 
-	FVector LineTracerEnd = PlayerViewPointLocation + PlayerViewPointRotation.Vector()*100;
+	FVector LineTracerEnd = PlayerViewPointLocation + PlayerViewPointRotation.Vector() * 100;
+	// ...
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		PhysicsHandle->SetTargetLocation(LineTracerEnd);
+	}
+}
+
+const FHitResult UGrabber ::GetFirstPhysicsBodyInReach(){
+	FVector PlayerViewPointLocation;
+	FRotator PlayerViewPointRotation;
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(
+		OUT PlayerViewPointLocation,
+		OUT PlayerViewPointRotation
+	);
+
+	/*UE_LOG(LogTemp, Warning,TEXT("%s ,%s"), *PlayerViewPointLocation.ToString(),*PlayerViewPointRotation.ToString() );*/
+
+	//Draw a red trace in the world.
+
+	FVector LineTracerEnd = PlayerViewPointLocation + PlayerViewPointRotation.Vector() * 100;
 
 	DrawDebugLine(
 		GetWorld(),
@@ -80,7 +132,8 @@ void UGrabber::TickComponent( float DeltaTime, ELevelTick TickType, FActorCompon
 	);
 
 	AActor *isActor = Hit.GetActor();
-	if(isActor)
-		UE_LOG(LogTemp, Warning, TEXT("I hit %s"),*isActor->GetName());
-}
+	if (isActor)
+		UE_LOG(LogTemp, Warning, TEXT("I hit %s"), *isActor->GetName());
 
+	return Hit;
+}

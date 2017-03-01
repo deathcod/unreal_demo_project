@@ -5,6 +5,10 @@
 #include "Components/ActorComponent.h"
 #include "OpenDoor.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnOpenRequest);
+
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class HELLO_UNREAL_API UOpenDoor : public UActorComponent
 {
@@ -19,6 +23,9 @@ public:
 
 	void DoorOpen();
 	void DoorClose();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnOpenRequest OnOpenRequest;
 	
 	// Called every frame
 	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
@@ -34,6 +41,8 @@ private:
 	float DoorCloseDelay = 1.f;
 
 	float LastDoorOpenDoor;
+
+	float GetTotalMassOfActorOnPlate();
 
 	AActor* ActorThatOpens;
 	AActor* Owner;
